@@ -146,6 +146,9 @@ jobs:
 
     - name: Building recovery
       run: |
+        sudo rm -rf build/make/core/config.mk
+        wget https://github.com/YZBruh/aik-test/releases/download/Random/config.mk
+        sudo mv config.mk build/make/core/config.mk
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
         lunch ${{ github.event.inputs.MAKEFILE_NAME }}-eng && make clean && make ${{ github.event.inputs.BUILD_TARGET }}image -j$(nproc --all)
