@@ -114,7 +114,7 @@ jobs:
     - name: Clone device tree
       run: |
         wget https://github.com/YZBruh/others/releases/download/a3dt/android_device_tcl_A3A_8_4G.zip
-        sudo mkdir ${{ github.event.inputs.DEVICE_PATH }}
+        sudo mkdir -p device device/tcl ${{ github.event.inputs.DEVICE_PATH }}
         sudo unzip *A3A* -d ${{ github.event.inputs.DEVICE_PATH }}
         rm *A3A*
       working-directory: ${{ steps.pwd.outputs.workspace-folder }}
