@@ -23,12 +23,6 @@ on:
         description: 'DEVICE_PATH'
         required: true
         default: 'device/xiaomi/ruby'
-      COMMON_TREE_URL:
-        description: 'COMMON_TREE_URL (if no common tree, leave blank)'
-        required: false
-      COMMON_PATH:
-        description: 'COMMON_PATH (if no common tree, leave blank)'
-        required: false
       KERNEL_URL:
         description: 'KERNEL_URL (if not uses kernel source, leave blank)'
         required: false
@@ -46,10 +40,6 @@ on:
         description: 'MAKEFILE_NAME'
         required: true
         default: 'twrp_ruby'
-      BUILD_TARGET:
-        description: 'BUILD_TARGET'
-        required: true
-        default: 'boot'
 
 jobs:
   build:
@@ -164,7 +154,7 @@ jobs:
       run: |
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
-        lunch ${{ github.event.inputs.MAKEFILE_NAME }}-eng && make clean && make ${{ github.event.inputs.BUILD_TARGET }}image -j$(nproc --all)
+        lunch ${{ github.event.inputs.MAKEFILE_NAME }}-eng && make clean && make bootimage -j$(nproc --all)
       working-directory: ${{ steps.pwd.outputs.workspace-folder }}
 
     - name: Upload to Release
