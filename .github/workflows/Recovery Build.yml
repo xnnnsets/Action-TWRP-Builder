@@ -29,6 +29,15 @@ on:
       COMMON_PATH:
         description: 'COMMON_PATH (if no common tree, leave blank)'
         required: false
+      KERNEL_URL:
+        description: 'KERNEL_URL (if not uses kernel source, leave blank)'
+        required: false
+      KERNEL_BRANCH:
+        description: 'KERNEL_BRANCH (if not uses kernel source, leave blank)'
+        required: false
+      KERNEL_PATH:
+        description: 'KERNEL_PATH (if not uses kernel source, leave blank)'
+        required: false
       DEVICE_NAME:
         description: 'DEVICE_NAME'
         required: true
@@ -123,6 +132,13 @@ jobs:
       run: |
         git clone ${{ github.event.inputs.COMMON_TREE_URL }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.COMMON_PATH }}
       working-directory: ${{ steps.pwd.outputs.workspace-folder }}
+
+    - name: Clone kernel
+      if: |
+        github.event.inputs.KERNEL_URL != null
+        github.event.inputs.KERNEL_PATH != null
+      run: |
+         git clone ${{ github.event.inputs.KERNEL_URL }} -b ${{ github.event.inputs.KERNEL_BRANCH }} ./${{ github.event.inputs.KERNEL_PATH }}
 
     - name: Check Build Tree
       uses: haya14busa/action-cond@v1
