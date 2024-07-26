@@ -14,32 +14,33 @@ on:
       DEVICE_TREE_URL:
         description: 'DEVICE_TREE_URL'
         required: true
-        default: 'https://github.com/YZBruh/recovery_device_xiaomi_ruby'
+        default: 'https://github.com/TeamWin/android_device_asus_I003D'
       DEVICE_TREE_BRANCH:
         description: 'DEVICE_TREE_BRANCH'
         required: true
-        default: 'android-14'
+        default: 'android-12.1'
       DEVICE_PATH:
         description: 'DEVICE_PATH'
         required: true
-        default: 'device/xiaomi/ruby'
-      KERNEL_URL:
-        description: 'KERNEL_URL (if not uses kernel source, leave blank)'
+        default: 'device/asus/I003D'
+      COMMON_TREE_URL:
+        description: 'COMMON_TREE_URL (if no common tree, leave blank)'
         required: false
-      KERNEL_BRANCH:
-        description: 'KERNEL_BRANCH (if not uses kernel source, leave blank)'
-        required: false
-      KERNEL_PATH:
-        description: 'KERNEL_PATH (if not uses kernel source, leave blank)'
+      COMMON_PATH:
+        description: 'COMMON_PATH (if no common tree, leave blank)'
         required: false
       DEVICE_NAME:
         description: 'DEVICE_NAME'
         required: true
-        default: 'ruby'
+        default: 'I003D'
       MAKEFILE_NAME:
         description: 'MAKEFILE_NAME'
         required: true
-        default: 'twrp_ruby'
+        default: 'twrp_I003D'
+      BUILD_TARGET:
+        description: 'BUILD_TARGET'
+        required: true
+        default: 'recovery'
 
 jobs:
   build:
@@ -82,11 +83,14 @@ jobs:
         java-version: '8'
 
     - name: Setup SSH Keys
-      if: ${{ startsWith(github.event.inputs.MANIFEST_URL, 'git@github.com') }}
+      if: ${{ startsWith(github.event.inputs.MANIFEST_URL, 'git@github.com') || 
+          startsWith(github.event.inputs.DEVICE_TREE_URL, 'git@github.com') ||
+          startsWith(github.event.inputs.COMMON_TREE_URL, 'git@github.com') }}
       uses: webfactory/ssh-agent@v0.5.4
       with:
           ssh-private-key: |
-              ${{ secrets.SSH_PRIVATE_KEY }}
+            ${{ secrets.SSH_PRIVATE_KEY }}
+
 
     - name: Install repo
       run: |
@@ -115,10 +119,13 @@ jobs:
         git clone ${{ github.event.inputs.DEVICE_TREE_URL }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.DEVICE_PATH }}
       working-directory: ${{ steps.pwd.outputs.workspace-folder }}
 
-    - name: Clone kernel
-      if: github.event.inputs.KERNEL_URL != null
-      run: | 
-         git clone ${{ github.event.inputs.KERNEL_URL }} -b ${{ github.event.inputs.KERNEL_BRANCH }} ./${{ github.event.inputs.KERNEL_PATH }}
+    - name: Clone common tree
+      if: |
+        github.event.inputs.COMMON_TREE_URL != null
+        && github.event.inputs.COMMON_PATH != null
+      run: |
+        git clone ${{ github.event.inputs.COMMON_TREE_URL }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.COMMON_PATH }}
+      working-directory: ${{ steps.pwd.outputs.workspace-folder }}
 
     - name: Check Build Tree
       uses: haya14busa/action-cond@v1
@@ -144,14 +151,14 @@ jobs:
       run: |
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
-        lunch ${{ github.event.inputs.MAKEFILE_NAME }}-eng && make clean && make bootimage -j$(nproc --all)
+        lunch ${{ github.event.inputs.MAKEFILE_NAME }}-eng && make clean && make ${{ github.event.inputs.BUILD_TARGET }}image -j$(nproc --all)
       working-directory: ${{ steps.pwd.outputs.workspace-folder }}
 
     - name: Upload to Release
       uses: softprops/action-gh-release@v1
       with:
         files: | 
-          workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/boot.img
+          workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/${{ github.event.inputs.BUILD_TARGET }}.img
           workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/*.zip
           workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/*vendor*.img
         name: ${{ github.event.inputs.DEVICE_NAME }}-${{ github.run_id }}
@@ -159,6 +166,6 @@ jobs:
         body: |
           Manifest: ${{ github.event.inputs.MANIFEST_BRANCH }}
           Device: ${{ github.event.inputs.DEVICE_NAME }}
-          Target: boot.img
+          Target: ${{ github.event.inputs.BUILD_TARGET }}.img
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
